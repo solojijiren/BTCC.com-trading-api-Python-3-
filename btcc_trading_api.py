@@ -8,6 +8,8 @@ import hmac
 import hashlib
 import time
 
+# Functions to create headers + payload:
+
 def create_tonce():
     tonce = int(time.time() * 1000000)
     return tonce
@@ -74,11 +76,6 @@ def makepayload(captured_tonce, query_method, param_payload):
                'method': query_method}
     return payload
 
-def makecall(payload, headers):
-    url = 'https://api.btcc.com/api_trade_v1.php'
-    r = requests.post(url, json.dumps(payload), headers=headers)
-    return r
-
 def start_query(query_method, query_params):
     captured_tonce = str(create_tonce())
     tonce = 'tonce=' + captured_tonce
@@ -94,72 +91,14 @@ def start_query(query_method, query_params):
     headers = build_auth_header(hashed_string, captured_tonce)
     payload = makepayload(captured_tonce, query_method, param_payload)
     result = makecall(payload, headers)
-    return result
+    return result    
 
-def get_balances():
-    query_method ='getAccountInfo'
-    query_params = ['balance']
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    currency = (result['balance']['cny']['amount'])
-    btc = (result['balance']['btc']['amount'])
-    return [currency, btc]
+#  Functions to make call:
 
-
-def get_orders():
-    query_method ='getOrders'
-    query_params = []
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    order_list = []
-    try:
-        order_type = (result['order'][0]['type'])
-        order_amount = (float(result['order'][0]['amount']))
-        order_price = (float(result['order'][0]['price']))
-        order_id = (result['order'][0]['id'])
-        order_list = [order_type, order_amount, order_price, order_id]
-    except:
-        pass
-    return order_list
-
-def get_sell(query_params):
-    query_method ='sellOrder2'
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    return result
-
-def get_buy(query_params):
-    query_method ='buyOrder2'
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    return result
-
-def get_cancel(query_params):
-    query_method ='cancelOrder'
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    return result
-
-def get_stop(query_params):
-    query_method ='buyStopOrder'
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    return result
-
-def get_transactions(query_params):
-    query_method ='getTransactions'
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    trans_type = (result['transaction'][0]['type'])
-    transaction_list = [trans_type]
-    return transaction_list
-
-def get_market_depth():
-    query_method ='getMarketDepth2'
-    query_params = [10]
-    r = error_shield(query_method, query_params)
-    result = r.json().get('result')
-    return result
+def makecall(payload, headers):
+    url = 'https://api.btcc.com/api_trade_v1.php'
+    r = requests.post(url, json.dumps(payload), headers=headers)
+    return r
 
 def error_shield(query_method, query_params):
     r = start_query(query_method, query_params)
@@ -177,5 +116,92 @@ def error_shield(query_method, query_params):
             print('Comms failed')
             break
     return r
+
+# Individual call functions:
+
+#  Returns yuan and btc balances: 
+
+def get_balances():
+    query_method ='getAccountInfo'
+    query_params = ['balance']
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    currency = (result['balance']['cny']['amount'])
+    btc = (result['balance']['btc']['amount'])
+    return [currency, btc]
+
+
+# Returns most recently placed unfilled order:
+
+def get_orders():
+    query_method ='getOrders'
+    query_params = []
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    order_list = []
+    try:
+        order_type = (result['order'][0]['type'])
+        order_amount = (float(result['order'][0]['amount']))
+        order_price = (float(result['order'][0]['price']))
+        order_id = (result['order'][0]['id'])
+        order_list = [order_type, order_amount, order_price, order_id]
+    except:
+        pass
+    return order_list
+
+#  Places a limit sell order.  Requires parameters, for example:
+#          get_sell([1500, 1])
+#  See api documentation for full details of available parameters
+
+def get_sell(query_params):
+    query_method ='sellOrder2'
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    return result
+
+# Places a limit sell order.  Requires parameters.
+
+def get_buy(query_params):
+    query_method ='buyOrder2'
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    return result
+
+#  Cancels a limit order.  Requires parameters.
+
+def get_cancel(query_params):
+    query_method ='cancelOrder'
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    return result
+
+# Place a stop. Requires parameters.
+
+def get_stop(query_params):
+    query_method ='buyStopOrder'
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    return result
+
+#  Returns the most recent transaction, for example funds transfered into account    
+
+def get_transactions(query_params):
+    query_method ='getTransactions'
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    trans_type = (result['transaction'][0]['type'])
+    transaction_list = [trans_type]
+    return transaction_list
+
+#  returns the current market depth, limited to 10 orders
+
+def get_market_depth():
+    query_method ='getMarketDepth2'
+    query_params = [10]
+    r = error_shield(query_method, query_params)
+    result = r.json().get('result')
+    return result
+
+
 
 
