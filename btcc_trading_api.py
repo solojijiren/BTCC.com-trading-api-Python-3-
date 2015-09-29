@@ -123,7 +123,6 @@ def get_orders():
     return order_list
 
 def get_sell(query_params):
-
     query_method ='sellOrder2'
     r = error_shield(query_method, query_params)
     result = r.json().get('result')
